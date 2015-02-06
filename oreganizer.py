@@ -79,6 +79,8 @@ unsatisfiable = dict()
 # set of goals which satisfied previous consumes dependencies and are therefore still around
 resources = dict()
 
+# and a thing to track how much stuff goes through our system
+resources_consumed = dict()
 
 ################################################################################
 ## handle command line args and get input ######################################
@@ -152,7 +154,12 @@ print()
 
 while unsat:
     (next_name,(next_count,next_type)) = unsat.popitem()
-    print("{0} x{1} {2}d".format(next_name, next_count, next_type))
+    print("{2}ing {0} x{1}".format(next_name, next_count, next_type[:-1]))
+
+    if next_type == "consume":
+        # track how much we consume total
+        AddGoal(next_name, next_count, "consume", resources_consumed)
+        
     if next_name in resources:
         if next_type == "require" and resources[next_name] >= next_count:
             # we have everything we need, continue happily
@@ -166,40 +173,46 @@ while unsat:
         elif next_type == "consume" and resources[next_name] > next_count:
             # we have everything we need, but we have to eat some of it
             print("  partially satisfied by existing resources")
+            # print("  consuming {0}x {1}".format(next_count, next_name))
+            # AddGoal(next_name, next_count, "consume", resources_consumed)
             resources[next_name] -= next_count
             # otherwise done; no need for more goals
             continue
         elif next_type == "consume" and resources[next_name] == next_count:
             # we're going to consume exactly as much as we have
+            print("  satisfied perfectly by existing resources")
+            # print("  consuming {0}x {1}".format(next_count, next_name))
+            # AddGoal(next_name, next_count, "consume", resources_consumed)
             del resources[next_name]
             # otherwise done; no need for more goals
-            print("  satisfied by existing resources")
             continue
         elif next_type == "consume" and resources[next_name] < next_count:
-            # we don't have enough to consume, so we remove that much from our count and add the
-            # remainder
+            # we don't have enough to consume, so we remove that much from our count and add a goal
+            # for the remainder
+            print("  satisfied existing resources")
+            # print("  consuming {0}x {1}".format(resources[next_name], next_name))
+            # AddGoal(next_name, resources[next_name], "consume", resources_consumed)
             next_count -= resources[next_name]
             del resources[next_name]
             # move to the next section to add the remainder
-            print("  partially consumed existing resources")
             
     if next_name not in actions:
         # we can't satisfy this action, because we don't already have any and we don't know how to
-        # make them. add some goals to the unsatisfiable list.
+        # make them. add a goal for it to the "you do this manually" list.
         AddGoal(next_name, next_count, next_type, unsatisfiable)
         print("  todo: {0}x {1}".format(next_count, next_name))
         
     # we need to add more of them and we have an action that will give us more.
     else:
-        for subgoal, (subgoal_count, subgoal_type) in actions[next_name].items():
+        for subgoal_name, (subgoal_count, subgoal_type) in actions[next_name].items():
             if subgoal_type == "consume":
                 # we need an entire set of the subgoal for every instance
                 total_count = subgoal_count * next_count
             elif subgoal_type == "require":
                 # we only need the number of resources specified total
                 total_count = subgoal_count
-            AddGoal(subgoal, total_count, subgoal_type, unsat)
-            print("  new goal: {2} {1}x {0}".format(subgoal, total_count, subgoal_type))
+            AddGoal(subgoal_name, total_count, subgoal_type, unsat)
+            print("  new goal: {2} {1}x {0}".format(subgoal_name, total_count, subgoal_type))
     
     # now, if next_goal was a consume goal, it goes away entirely, but if it was a require goal
     # it's going to stick around. Put it in the resources set.
@@ -209,6 +222,7 @@ while unsat:
         else:
             resources[next_name] = next_count
 
+
     
 print()
 print()
@@ -217,14 +231,19 @@ for name,(count, t) in unsat.items():
     print("  {0}: {1:3}x {2}".format(t, count, name))
 print()
 
-print("Unsatisfiable:")
+print("Todo by hand:")
 for name,(count, t) in [(n, (c, t)) for (n, (c, t)) in unsatisfiable.items() if t == "require"]:
     print("  {0}: {1:3}x {2}".format(t, count, name))
 for name,(count, t) in [(n, (c, t)) for (n, (c, t)) in unsatisfiable.items() if t == "consume"]:
     print("  {0}: {1:3}x {2}".format(t, count, name))
 print()
 
-print("Resources:")
+print("Resources that will be consumed:")
+for name,(count, _) in resources_consumed.items():
+    print("  {0:3}x {1}".format(count, name))
+print()
+
+print("Resources remaining at end:")
 for name,count in resources.items():
     print("  {0:3}x {1}".format(count, name))
 print()
