@@ -2,5 +2,7 @@
     "sand": 20,
     "clay": 33,
     "gravel": 10,
-    "coal": 64
+    "blue slime": 25,
+    "dirt": "enough",
+    "cobble": "enough"
 }

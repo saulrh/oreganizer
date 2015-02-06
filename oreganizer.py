@@ -145,8 +145,13 @@ actions = dict(action_filter(actions))
 # user's top-level goals
 unsat = {name: (count, "require") for (name, count) in goals.items()}
 
-# resources is already in the correct format, since it doesn't need anything special. it's just a
-# map from names to counts of the resources we already have.
+# the only thing we have to do for the resources file is parse the "enough" statements: some things
+# are so easy to make that we'll just assume we have an arbitrarily large number of them. For
+# example, once you have an igneous extruder, you have *enough* cobblestone to do anything you
+# want.
+for name, count in resources.items():
+    if count == "enough":
+        resources[name] = float("inf")
 
 ################################################################################
 ## check that our data structures look good ####################################
