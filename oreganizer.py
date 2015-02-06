@@ -5,6 +5,25 @@
 import json
 import sys
 
+################################################################################
+## configurations ##############################################################
+################################################################################
+
+# set this up so we can group constants up
+class Thing: pass
+
+# verbosity level
+# 0 = normal
+# 1 = a little bit of information
+# 2 = very informational
+# 3 = debug
+verbosity = 0
+VERBOSITY = Thing()
+VERBOSITY.INFO = 1
+VERBOSITY.VINFO = 2
+VERBOSITY.DEBUG = 3
+
+
 
 ################################################################################
 ## definitions #################################################################
@@ -120,28 +139,34 @@ def action_filter(input_actions):
         yield (name, dependencies)
 actions = dict(action_filter(actions))
 
-print("Actions: ")
-for name,deps in actions.items():
-    print("  {0} <- {1} using {2}".format(name,
-                                          ["{0} {1}".format(depc, depn)
-                                           for (depn,(depc, dept)) in deps.items()
-                                           if dept == "consume"],
-                                          ["{0} {1}".format(depc, depn)
-                                           for (depn,(depc, dept)) in deps.items()
-                                           if dept == "require"]))
-print()
-
 # we start the algorithm off with several unsatisfied requires dependencies, corresponding to the
 # user's top-level goals
 unsat = {name: (count, "require") for (name, count) in goals.items()}
+
+# resources is already in the correct format, since it doesn't need anything special. it's just a
+# map from names to counts of the resources we already have.
+
+################################################################################
+## check that our data structures look good ####################################
+################################################################################
+
+if verbosity >= VERBOSITY.INFO:
+    print("Available actions: ")
+    for name,deps in actions.items():
+        print("  {0} <- {1} using {2}".format(name,
+                                              ["{0} {1}".format(depc, depn)
+                                               for (depn,(depc, dept)) in deps.items()
+                                               if dept == "consume"],
+                                              ["{0} {1}".format(depc, depn)
+                                               for (depn,(depc, dept)) in deps.items()
+                                               if dept == "require"]))
+    print()
 
 print("Initial goals:")
 for name,(count, t) in unsat.items():
     print("  {0}: {1:3}x {2}".format(t, count, name))
 print()
 
-# resources is already in the correct format, since it doesn't need anything special. it's just a
-# map from names to counts of the resources we already have.
 print("Initial resources:")
 for name,count in resources.items():
     print("  {0:3}x {1}".format(count, name))
@@ -151,10 +176,11 @@ print()
 ## run the actual planner ######################################################
 ################################################################################
 
-
+print("Planning...")
 while unsat:
     (next_name,(next_count,next_type)) = unsat.popitem()
-    print("{2}ing {0} x{1}".format(next_name, next_count, next_type[:-1]))
+    if verbosity >= VERBOSITY.VINFO:
+        print("{2}ing {0} x{1}".format(next_name, next_count, next_type[:-1]))
 
     if next_type == "consume":
         # track how much we consume total
@@ -163,16 +189,19 @@ while unsat:
     if next_name in resources:
         if next_type == "require" and resources[next_name] >= next_count:
             # we have everything we need, continue happily
-            print("  satisfied by existing resources")
+            if verbosity >= VERBOSITY.VINFO:
+                print("  satisfied by existing resources")
             continue
         elif next_type == "require" and resources[next_name] < next_count:
             # we have some, but not enough. reduce our count and move to the next section to add
             # the remainder
-            print("  partially satisfied by existing resources")
+            if verbosity >= VERBOSITY.VINFO:
+                print("  partially satisfied by existing resources")
             next_count -= resources[next_name]
         elif next_type == "consume" and resources[next_name] > next_count:
             # we have everything we need, but we have to eat some of it
-            print("  partially satisfied by existing resources")
+            if verbosity >= VERBOSITY.VINFO:
+                print("  partially satisfied by existing resources")
             # print("  consuming {0}x {1}".format(next_count, next_name))
             # AddGoal(next_name, next_count, "consume", resources_consumed)
             resources[next_name] -= next_count
@@ -180,7 +209,8 @@ while unsat:
             continue
         elif next_type == "consume" and resources[next_name] == next_count:
             # we're going to consume exactly as much as we have
-            print("  satisfied perfectly by existing resources")
+            if verbosity >= VERBOSITY.VINFO:
+                print("  satisfied perfectly by existing resources")
             # print("  consuming {0}x {1}".format(next_count, next_name))
             # AddGoal(next_name, next_count, "consume", resources_consumed)
             del resources[next_name]
@@ -189,7 +219,8 @@ while unsat:
         elif next_type == "consume" and resources[next_name] < next_count:
             # we don't have enough to consume, so we remove that much from our count and add a goal
             # for the remainder
-            print("  satisfied existing resources")
+            if verbosity >= VERBOSITY.VINFO:
+                print("  satisfied existing resources")
             # print("  consuming {0}x {1}".format(resources[next_name], next_name))
             # AddGoal(next_name, resources[next_name], "consume", resources_consumed)
             next_count -= resources[next_name]
@@ -200,7 +231,8 @@ while unsat:
         # we can't satisfy this action, because we don't already have any and we don't know how to
         # make them. add a goal for it to the "you do this manually" list.
         AddGoal(next_name, next_count, next_type, unsatisfiable)
-        print("  todo: {0}x {1}".format(next_count, next_name))
+        if verbosity >= VERBOSITY.VINFO:
+            print("  todo: {0}x {1}".format(next_count, next_name))
         
     # we need to add more of them and we have an action that will give us more.
     else:
@@ -212,7 +244,8 @@ while unsat:
                 # we only need the number of resources specified total
                 total_count = subgoal_count
             AddGoal(subgoal_name, total_count, subgoal_type, unsat)
-            print("  new goal: {2} {1}x {0}".format(subgoal_name, total_count, subgoal_type))
+            if verbosity >= VERBOSITY.INFO:
+                print("  new goal: {2} {1}x {0}".format(subgoal_name, total_count, subgoal_type))
     
     # now, if next_goal was a consume goal, it goes away entirely, but if it was a require goal
     # it's going to stick around. Put it in the resources set.
@@ -221,24 +254,23 @@ while unsat:
             resources[next_name] = max(resources[next_name], next_count)
         else:
             resources[next_name] = next_count
+print("done!")
 
 
-    
-print()
 print()
 print("Remaining unsatisfied goals (should be none):")
 for name,(count, t) in unsat.items():
     print("  {0}: {1:3}x {2}".format(t, count, name))
 print()
 
-print("Todo by hand:")
+print("Do by hand:")
 for name,(count, t) in [(n, (c, t)) for (n, (c, t)) in unsatisfiable.items() if t == "require"]:
     print("  {0}: {1:3}x {2}".format(t, count, name))
 for name,(count, t) in [(n, (c, t)) for (n, (c, t)) in unsatisfiable.items() if t == "consume"]:
     print("  {0}: {1:3}x {2}".format(t, count, name))
 print()
 
-print("Resources that will be consumed:")
+print("Resources that will be built and used along the way:")
 for name,(count, _) in resources_consumed.items():
     print("  {0:3}x {1}".format(count, name))
 print()
