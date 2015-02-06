@@ -1,4 +1,90 @@
 {
+    "tic crossbow": {
+        "consumes": {
+            "blue slime crossbow limb": 1,
+            "thaumium crossbow body": 1,
+            "paper tough binding": 1,
+            "fiery bowstring": 1
+        },
+        "requires": {
+            "tic bolts": 1,
+            "tool forge": 1
+        }
+    },
+    "paper tough binding": {
+        "consumes": {
+            "paper": 3
+        }
+    },
+    "fiery bowstring": {
+        "consumes": {
+            "flamestring": 3
+        }
+    },
+    "thaumium crossbow body": {
+        "consumes": {
+            "thaumium ingot": 8
+        }
+    },
+    "blue slime crossbow limb": {
+        "consumes": {
+            "blue slime crystal": 5
+        }
+    },
+    "blue slime crystal": {
+        "consumes": {
+            "blue slime": 4,
+            "sand": 1,
+            "dirt": 1
+        }
+    },
+    "thaumium ingot": {
+        "consumes": {
+            "chiseled sandstone": 4,
+            "iron ingot": 1
+        },
+        "requires": {
+            "thaumcraft crucible": 1,
+            "thaumium ingot research": 1
+        }
+    },
+    "chiseled sandstone": {
+        "consumes": {
+            "sand": 4
+        }
+    },
+    "tic bolts": {
+        "consumes": {
+            "manyullyn": 0.5,
+            "steel": 0.5
+        },
+        "requires": {
+            "smeltery": 1,
+            "casting table": 1,
+            "seared faucet": 1
+        }
+    },
+    "tool forge": {
+        "consumes": {
+            "seared bricks": 3,
+            "iron block": 4
+        }
+    },
+    "iron block": {
+        "consumes": {
+            "iron ingot": 9
+        }
+    },
+    "seared faucet": {
+        "consumes": {
+            "seared brick": 3
+        }
+    },
+    "casting table": {
+        "consumes": {
+            "seared brick": 7
+        }
+    },
     "smeltery": {
         "consumes": {
             "smeltery floor": 1,
@@ -8,7 +94,7 @@
     },
     "smeltery floor": {
         "consumes": {
-            "seared blocks": 16
+            "seared bricks": 16
         },
         "requires": null
     },
@@ -23,12 +109,12 @@
     },
     "smeltery wall": {
         "consumes": {
-            "seared blocks": 3,
+            "seared bricks": 3,
             "seared glass": 1
         },
         "requires": null
     },
-    "seared blocks": {
+    "seared bricks": {
         "consumes": {
             "seared brick": 4
         }
@@ -51,14 +137,12 @@
     },
     "glass": {
         "consumes": {
-            "sand": 1,
-            "coal": 0.125
+            "sand": 1
         }
     },
     "seared brick": {
         "consumes": {
-            "grout": 1,
-            "coal": 0.125
+            "grout": 1
         }
     },
     "grout": {
