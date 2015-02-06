@@ -1,0 +1,71 @@
+{
+    "smeltery": {
+        "consumes": {
+            "smeltery floor": 1,
+            "smeltery height": 2
+        },
+        "requires": null
+    },
+    "smeltery floor": {
+        "consumes": {
+            "seared blocks": 16
+        },
+        "requires": null
+    },
+    "smeltery height": {
+        "consumes": {
+            "smeltery wall": 3,
+            "smeltery controller": 1,
+            "smeltery drain": 2,
+            "seared glass": 1
+        },
+        "requires": null
+    },
+    "smeltery wall": {
+        "consumes": {
+            "seared blocks": 3,
+            "seared glass": 1
+        },
+        "requires": null
+    },
+    "seared blocks": {
+        "consumes": {
+            "seared brick": 4
+        }
+    },
+    "smeltery controller": {
+        "consumes": {
+            "seared brick": 8
+        }
+    },
+    "smeltery drain": {
+        "consumes": {
+            "seared brick": 6
+        }
+    },
+    "seared glass": {
+        "consumes": {
+            "seared brick": 4,
+            "glass": 5
+        }
+    },
+    "glass": {
+        "consumes": {
+            "sand": 1,
+            "coal": 0.125
+        }
+    },
+    "seared brick": {
+        "consumes": {
+            "grout": 1,
+            "coal": 0.125
+        }
+    },
+    "grout": {
+        "consumes": {
+            "sand": 1,
+            "gravel": 1,
+            "clay": 1
+        }
+    }
+}

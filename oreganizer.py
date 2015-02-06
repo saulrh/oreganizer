@@ -132,10 +132,12 @@ else:
 def action_filter(input_actions):
     for name, deps in input_actions.items():
         dependencies = dict()
-        for g,c in deps["requires"].items():
-            dependencies[g] = (c, "require")
-        for g,c in deps["consumes"].items():
-            dependencies[g] = (c, "consume")
+        if "requires" in deps and deps["requires"]:
+            for g,c in deps["requires"].items():
+                dependencies[g] = (c, "require")
+        if "consumes" in deps and deps["consumes"]:
+            for g,c in deps["consumes"].items():
+                dependencies[g] = (c, "consume")
         yield (name, dependencies)
 actions = dict(action_filter(actions))
 
