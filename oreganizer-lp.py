@@ -27,40 +27,43 @@ def addineq(const, terms):
     h_rows.append(const)
 
 
-mats = ["searedglass",
-        "searedbrick",
+mats = ["sglass",
+        "sbrick",
         "glass",
         "grout",
         "sand",
         "gravel",
         "clay"]
-mat_vars = ["_want", "_need", "_have", "_extra"]
+mat_vars = ["_w", "_n", "_h", "_e"]
 variables = it.product(mats, mat_vars)
 variables = ["".join(x) for x in variables]
 indices = dict(zip(variables, it.count(0)))
 
-addeq(1., [("searedglass_want", 1.)])
-addeq(0., [("searedglass_need", -1.),
-           ("searedbrick_want", 1./4.),
-           ("glass_want", 1./5.)])
-addeq(0., [("searedbrick_need", -1.),
-           ("grout_want", 1.)])
-addeq(0., [("glass_need", -1.),
-           ("sand_want", 1.)])
-addeq(0., [("grout_need", -1.),
-           ("sand_want", 1.),
-           ("gravel_want", 1.),
-           ("clay_want", 1.)])
+addeq(1., [("sglass_w", 1./5.)])
+addeq(0., [("sglass_n", -1.),
+           ("glass_w", 1./5.)])
+addeq(0., [("sglass_n", -1.),
+           ("sbrick_w", 1./4.)])
+addeq(0., [("sbrick_n", -1.),
+           ("grout_w", 1.)])
+addeq(0., [("glass_n", -1.),
+           ("sand_w", 1.)])
+addeq(0., [("grout_n", -1.),
+           ("sand_w", 1.)])
+addeq(0., [("grout_n", -1.),
+           ("clay_w", 1.)])
+addeq(0., [("grout_n", -1.),
+           ("gravel_w", 1.)])
 
 for mat in mats:
-    addeq(0, [(mat + "_want", -1.),
-              (mat + "_need", 1.),
-              (mat + "_have", 1.),
-              (mat + "_extra", -1.)])
+    addeq(0, [(mat + "_w", -1.),
+              (mat + "_n", 1.),
+              (mat + "_h", 1.),
+              (mat + "_e", -1)])
 
 
-counts = [("searedglass", 0.),
-          ("searedbrick", 0.),
+counts = [("sglass", 0.),
+          ("sbrick", 0.),
           ("glass", 0.),
           ("grout", 0.),
           ("sand", 0.),
@@ -68,15 +71,14 @@ counts = [("searedglass", 0.),
           ("clay", 0.)]
 
 for mat,count in counts:
-    addeq(count, [(mat + "_have", 1.)])
-    
+    addeq(count, [(mat + "_h", 1.)])
 
 for mat in mats:
-    addineq(0., [(mat + "_want", -1.)])
-    addineq(0., [(mat + "_extra", -1.)])
+    addineq(0., [(mat + "_w", -1.)])
+    addineq(0., [(mat + "_e", -1.)])
 
-overages = [("searedglass", 1.),
-            ("searedbrick", 1.),
+overages = [("sglass", 1.),
+            ("sbrick", 1.),
             ("glass", 1.),
             ("grout", 1.),
             ("sand", 1.),
@@ -85,7 +87,8 @@ overages = [("searedglass", 1.),
 
 c_rows = [0] * len(variables)
 for mat,cost in overages:
-    c_rows[indices[mat + "_extra"]] = cost
+    c_rows[indices[mat + "_e"]] = cost
+    c_rows[indices[mat + "_w"]] = cost
 
 print()
 print(tabulate.tabulate(A_rows))
@@ -110,14 +113,23 @@ sol = solvers.lp(c, G, h, A, b)
 
 numbers = [round(x, 3) for x in sol['x']]
 
-for var in variables:
-    print("{0:20}: {1}".format(var, numbers[indices[var]]))
+# for var in variables:
+#     print("{0:20}: {1}".format(var, numbers[indices[var]]))
 
-v1 = "searedglass_need"
-for line in A_rows:
-    if line[indices[v1]] != 0:
-        print()
-        for v2 in variables:
-            if line[indices[v2]] != 0:
-                print("{0:20}: {1}".format(v2, line[indices[v2]]))
+# v1 = "sglass_n"
+# for line in A_rows:
+#     if line[indices[v1]] != 0:
+#         print()
+#         for v2 in variables:
+#             if line[indices[v2]] != 0:
+#                 print("{0:20}: {1}".format(v2, line[indices[v2]]))
             
+
+for mat in mats:
+    print("{0:8}: want {1:5}, have {2:5}, so need {3:5} and {4:5} extra".format(
+        mat,
+        numbers[indices[mat + "_w"]],
+        numbers[indices[mat + "_h"]],
+        numbers[indices[mat + "_n"]],
+        numbers[indices[mat + "_e"]]
+    ))
