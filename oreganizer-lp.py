@@ -46,12 +46,13 @@ import itertools as it
 # Fourth, the equation that determines how many resources go into the construction of each one of
 # the material. Because each material will be required for multiple other constructions and we're
 # using equalities, though, we have an intermediate stage where we want a bunch of variables that
-# get added up to form the total "want" for the dependent material. 0 = -mat_need + sum(dep,
-# 1/dep_required * mat_dep_want), where for each of our mat's dependencies the coefficient of the
-# term is 1/dep_required (how many of them we need) and the variable is mat_dep_want (how many of
-# dep we need to make the mats we need). In other words, if we need 5 glass and 4 searedbrick to
-# make 1 searedglass, our equation will be 0 = -searedglass_want + 1/5 * searedglass_glass_want +
-# 1/4 searedglass_searedbrick_want. We call these equations mat-dep-want.
+# get added up to form the total "want" for the dependent material. for each dep in the
+# dependencies list, 0 = -dep_required * mat_need + mat_dep_want, where dep_required is how many of
+# them we need and mat_dep_want will be how many of dep we need to make the mats we need. In other
+# words, if we need 5 glass to make 1 searedglass, our equation will be 0 = -5 * searedglass_want +
+# * searedglass_searedbrick_want. This works out to the number of searedglass we make being 1/5th
+# the number of seared bricks we want, so this works. We call the equation relating material mat to
+# dependency dep mat-dep-want.
 # 
 # Fifth, the summation equation that puts all the mat-dep-want variables together into the ultimate
 # mat-want total. 0 = -mat_want + sum(invdep, invdep_mat_want), where we add up the count
@@ -124,17 +125,17 @@ mats = ["sglass",
         "glass",
         "grout",
         "sand",
-        # "gravel",
-        # "clay"
+        "gravel",
+        "clay"
 ]
 
-counts = [("sglass", 2),
+counts = [("sglass", 0),
           ("sbrick", 0),
-          ("glass", 100),
+          ("glass", 0),
           ("grout", 0),
           ("sand", 0),
-          # ("gravel", 0),
-          # ("clay", 0)
+          ("gravel", 0),
+          ("clay", 0)
 ]
 
 
@@ -143,8 +144,8 @@ overages = [("sglass", 1),
             ("glass", 1),
             ("grout", 1),
             ("sand", 1),
-            # ("gravel", 1),
-            # ("clay", 1)
+            ("gravel", 1),
+            ("clay", 1)
 ]
 
 goals = {
@@ -163,9 +164,9 @@ dependencies = {
         "sand": 1
     },
     "grout": {
-        # "sand": 1,
-        # "gravel": 1,
-        # "clay": 1
+        "sand": 1,
+        "gravel": 1,
+        "clay": 1
     }
 }
 
@@ -211,6 +212,9 @@ variables = ["".join(x) for x in variables]
 # coefficients.
 indices = dict(zip(variables, it.count(0)))
 
+# dictionary mapping mats to lists of variables in each mat's wantsum equation.
+revdeps = dict()
+
 ################################################################################
 ## PROBLEM DEFINITION ##########################################################
 ################################################################################
@@ -234,15 +238,32 @@ def addineq(name, const, terms):
         G_x.append(coeff)
     h_dict[ineqrows[name]] = const
 
+def adddep(mat, dep, count):
+    var = mat + "_" + dep + "_w"
+    variables.append(var)
+    indices[var] = len(variables) - 1
+    addeq(mat + "-" + dep + "-w",
+          0,
+          [(mat + "_n", -count),
+           (var, 1)])
+    if dep not in revdeps:
+        revdeps[dep] = []
+    revdeps[dep].append(var)
+
 ########################################
 # add the mat-n-dependency equations from the dependencies dict that was one of our inputs
 
 for mat, deps in dependencies.items():
     for dep, count in deps.items():
-        addeq(mat + "-n " + dep,
-              0.,
-              [(mat + "_n", -1. * count),
-               (dep + "_w", 1.)])
+        adddep(mat, dep, count)
+
+########################################
+# add the mat-wantsum equations
+
+for dep, revdep_vars in revdeps.items():
+    l = [(dep + "_w", -1)]
+    l += [(var, 1) for var in revdep_vars]
+    addeq(dep + "-wantsum", 0, l)
 
 ########################################
 # add our mat-top equations from the goals dict that was one of our inputs
